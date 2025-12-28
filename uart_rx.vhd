@@ -10,7 +10,7 @@ entity uart_rx is
         -- Output 32-bit Integer
         data_out_32 : out std_logic_vector(31 downto 0);
         
-        -- Valid Pulse
+        -- Valid Pulse (Fires when 'Enter' is detected)
         data_valid  : out std_logic
     );
 end uart_rx;
@@ -31,8 +31,8 @@ architecture behavior of uart_rx is
     signal s_busy       : std_logic;
     signal s_busy_prev  : std_logic := '0';
     
-    signal r_buffer_32  : std_logic_vector(31 downto 0) := (others => '0');
-    signal r_byte_count : integer range 0 to 4 := 0;
+    -- Accumulator to store the text number being typed
+    signal r_accum      : unsigned(31 downto 0) := (others => '0');
 
 begin
 
@@ -52,19 +52,24 @@ begin
             data_valid <= '0';
             s_busy_prev <= s_busy;
             
-            -- Detect Falling Edge of BUSY (Byte finished)
+            -- Detect Falling Edge of BUSY (New Byte Received)
             if s_busy_prev = '1' and s_busy = '0' then
                 
-                -- Shift Left and Insert New Byte
-                r_buffer_32 <= r_buffer_32(23 downto 0) & s_rx_data;
-                
-                if r_byte_count < 3 then
-                    r_byte_count <= r_byte_count + 1;
-                else
-                    r_byte_count <= 0;
-                    data_valid   <= '1';
-                    -- Use assembled buffer + new byte for final output
-                    data_out_32  <= r_buffer_32(23 downto 0) & s_rx_data;
+                -- CASE 1: The byte is a DIGIT ('0' to '9')
+                if unsigned(s_rx_data) >= 48 and unsigned(s_rx_data) <= 57 then
+                    -- Math: New Value = (Old Value * 10) + (Digit - 48)
+                    -- Example: "12" becomes "120" + "3" = 123
+                    r_accum <= resize((r_accum * 10) + (unsigned(s_rx_data) - 48), 32);
+                    
+                -- CASE 2: The byte is a TERMINATOR (Enter / Line Feed)
+                -- 0x0A = LF, 0x0D = CR, 0x20 = Space
+                elsif s_rx_data = x"0A" or s_rx_data = x"0D" or s_rx_data = x"20" then
+                    
+                    data_out_32 <= std_logic_vector(r_accum);
+                    data_valid  <= '1'; -- FIRE SIGNAL!
+                    
+                    -- Reset accumulator for the next number
+                    r_accum <= (others => '0');
                 end if;
             end if;
             
