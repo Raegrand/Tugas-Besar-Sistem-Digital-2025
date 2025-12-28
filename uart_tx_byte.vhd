@@ -14,7 +14,7 @@ end uart_tx_byte;
 
 architecture behavior of uart_tx_byte is
     -- 50MHz / 9600 baud = 5208 ticks
-    constant PRESCALER_MAX : integer := 5207; 
+    constant PRESCALER_MAX : integer := 5207;
     
     signal r_PRESCALER   : integer range 0 to PRESCALER_MAX := 0;
     signal r_INDEX       : integer range 0 to 9 := 0;
@@ -33,7 +33,7 @@ begin
                 r_DATA_BUFFER(8 downto 1) <= i_DATA;
                 
                 s_TX_FLAG <= '1';
-                o_BUSY    <= '1';
+                o_BUSY    <= '1';`
                 
                 -- Update Output IMMEDIATELY (Start Bit)
                 o_TX      <= '0'; 
