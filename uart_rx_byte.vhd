@@ -14,7 +14,8 @@ end uart_rx_byte;
 
 architecture behavior of uart_rx_byte is
 
-    constant PRESCALER_MAX : integer := 5207; -- 50MHz / 9600
+    -- 50MHz / 9600 baud = 5208 ticks
+    constant PRESCALER_MAX : integer := 5207;
     constant PRESCALER_MID : integer := 2603;
 
     signal r_PRESCALER      : integer range 0 to PRESCALER_MAX := 0;
@@ -38,7 +39,6 @@ begin
                     r_PRESCALER <= 0;
                     r_INDEX <= 0;
                 end if;
-
             -- 2. Receiving State
             else
                 if r_PRESCALER < PRESCALER_MAX then
@@ -58,13 +58,12 @@ begin
                         o_BUSY <= '0';
                         
                         -- [[ CRITICAL FIX ]]
-                        -- Check i_RX (the live signal) for the Stop Bit '1'
-                        -- Check r_DATA_BUFFER(0) for the Start Bit '0'
+                        -- Check i_RX (live) for Stop Bit '1' AND Start Bit '0'
                         if r_DATA_BUFFER(0) = '0' and i_RX = '1' then
                             o_sig_CRRP_DATA <= '0';
                             r_RECEIVED_BYTE <= r_DATA_BUFFER(8 downto 1);
                         else
-                            o_sig_CRRP_DATA <= '1'; 
+                            o_sig_CRRP_DATA <= '1'; -- Framing Error
                         end if;
                     end if;
                 end if;
