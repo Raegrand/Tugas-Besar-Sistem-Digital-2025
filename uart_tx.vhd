@@ -59,7 +59,7 @@ begin
                         state <= SEND_B1;
                     end if;
 
-                -- BYTE 1: Padding + Bits [35:32] (MSB Nibble)
+                -- BYTE 1: Padding + Bits [35:32]
                 when SEND_B1 =>
                     tx_data_byte <= "0000" & r_data_latch(35 downto 32);
                     tx_start_pulse <= '1';
@@ -91,7 +91,7 @@ begin
                 when WAIT_B4 =>
                     if tx_busy_flag = '0' and tx_start_pulse = '0' then state <= SEND_B5; end if;
 
-                -- BYTE 5: Bits [7:0] (LSB)
+                -- BYTE 5: Bits [7:0]
                 when SEND_B5 =>
                     tx_data_byte <= r_data_latch(7 downto 0);
                     tx_start_pulse <= '1';
